@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>生日快乐</title>
+    <style>
+        body { text-align: center; background: #87CEEB; font-family: sans-serif; }
+        #cake { font-size: 100px; cursor: pointer; margin-top: 50px; }
+        #status { font-size: 24px; color: #ff4d4d; }
+    </style>
+</head>
+<body>
+    <h1>祝最重要的冉冉生日快乐！</h1>
+    <div id="cake">🎂 🔥</div> <p id="status">点击页面播放音乐，对着麦克风吹气熄灭蜡烛</p >
+    <audio id="music" src="birthday.M4A" loop></audio>
+
+    <script>
+        let cake = document.getElementById('cake');
+        let audio = document.getElementById('music');
+        let started = false;
+
+        // 点击启动
+        document.body.addEventListener('click', () => {
+            if (!started) {
+                audio.play();
+                startMic();
+                started = true;
+            }
+        });
+
+        function startMic() {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const analyser = ctx.createAnalyser();
+                ctx.createMediaStreamSource(stream).connect(analyser);
+                analyser.fftSize = 256;
+                const data = new Uint8Array(analyser.frequencyBinCount);
+
+                function detect() {
+                    analyser.getByteFrequencyData(data);
+                    let sum = data.reduce((a, b) => a + b);
+                    if (sum > 3000) { // 这里是吹气灵敏度，数值越大越难吹灭
+                        extinguish();
+                    }
+                    requestAnimationFrame(detect);
+                }
+                detect();
+            });
+        }
+
+        function extinguish() {
+            cake.innerHTML = "🎂 (蜡烛熄灭了)";
+            document.getElementById('status').innerText = "生日快乐！愿望一定会实现的！";
+            audio.pause();
+        }
+
+        // 点击蜡烛也可以直接熄灭
+        cake.addEventListener('click', extinguish);
+    </script>
+</body>
+</html>
